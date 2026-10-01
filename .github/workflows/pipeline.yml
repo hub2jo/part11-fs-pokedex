@@ -38,6 +38,17 @@ jobs:
       - name: Trigger deployment
         if: ${{ github.event_name == 'push' && !contains(join(github.event.commits.*.message, ' '), '#skip') }}
         run: curl --fail ${{ secrets.RENDER_DEPLOY_HOOK }}
+      - name: Notify Discord on failure
+        if: ${{ failure() }}
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          status: Failure
+          title: "Build failed"
+          description: |
+            Commit https://github.com/${{ github.repository }}/commit/${{ github.sha }} by ${{ github.actor }} broke the build :(
+          color: 0xff0000
+          username: hub2jo pokedex bot
 
   tag_release:
     needs: [simple_deployment_pipeline]
@@ -50,7 +61,18 @@ jobs:
         with:
           fetch-depth: '0'
       - name: Bump version and push tag
+        id: tag
         uses: anothrNick/github-tag-action@1.75.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BUMP: patch
+      - name: Notify Discord on success
+        if: ${{ success() }}
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK }}
+          status: Success
+          title: "New version deployed"
+          description: "Version ${{ steps.tag.outputs.new_tag }} of https://hub2jo-pokedex.onrender.com deployed by ${{ github.actor }}"
+          color: 0x00ff00
+          username: hub2jo pokedex bot
