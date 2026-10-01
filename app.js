@@ -20,3 +20,5 @@ const start = async () => {
 }
 
 start()
+
+const unused = 1
